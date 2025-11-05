@@ -11,8 +11,8 @@ def get_plot(df: pd.DataFrame):
     plt.savefig('stock_price_simulation.png')
     plt.show()    
 
-def get_DeltaS(media, deviation, stock_price, Delta_t, epsilon):
-    DeltaS = media * stock_price * Delta_t + deviation * stock_price * np.sqrt(Delta_t) * epsilon
+def get_DeltaS(media, deviation, S, Delta_t, epsilon):
+    DeltaS = media * S * Delta_t + deviation * S * np.sqrt(Delta_t) * epsilon
     return DeltaS
 
 def montecarlo(Delta_t, media, deviation, stock_price):
@@ -22,7 +22,7 @@ def montecarlo(Delta_t, media, deviation, stock_price):
     t = 0
     for _ in range(100):
         epsilon = np.random.normal(loc=0,scale=1)
-        Delta_S = get_DeltaS(media, deviation, stock_price, Delta_t, epsilon)
+        Delta_S = get_DeltaS(media, deviation, S, Delta_t, epsilon)
         new_row_data = {
                         't': t,
                         'Stock price at t': S, 
