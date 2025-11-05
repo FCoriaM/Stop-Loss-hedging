@@ -36,12 +36,15 @@ def montecarlo(Delta_t, media, deviation, stock_price):
     return stock_simulation_df
 
 def main():
-    interval = 0.0192 # years, equiv to 1week
-    media = 0.15
-    deviation = 0.30
-    initial_stock_price = 100
-    df = montecarlo(Delta_t=interval, media=media, deviation=deviation, stock_price=initial_stock_price)
-    get_plot(df)
+    T = 0.3846 # años, equiv a 20 semanas
+    n_steps = 20            # rebalanceo semanal
+    interval = T / n_steps  # Δt
+    media = 0.13
+    deviation = 0.20
+    initial_stock_price = 49
+    r = 0.05
+    K = 50
+    BSM_price = 2.40
 
 if __name__ == '__main__':
     main()
