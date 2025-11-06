@@ -1,7 +1,9 @@
 import pandas as pd
 from random import random
 import numpy as np
-from src.price_simulation import sim_stock_price
+from price_simulation import sim_stock_price
+from stop_loss import get_hedge_preformance
+from scipy.stats import norm
 
 
 def get_d1(S_0, K, r, tau, deviation):
@@ -25,7 +27,7 @@ def norm_cdf(x):
 
 def delta_call(S0, K, r, tau, sigma):
     x = get_d1(S0, K, r, tau, sigma)
-    return norm_cdf(x)
+    return norm.cdf(x)
 
 def delta_put(S0, K, r, tau, sigma):
     x = get_d1(S0, K, r, tau, sigma)
@@ -56,7 +58,7 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
     S = S0
     Delta_prev = delta_call(S, K, r, T, sigma)
     acciones_0 = Delta_prev * amt_options
-    costo_0 = acciones_0 * S / 1000  
+    costo_0 = acciones_0 * S
     accum_cost = costo_0
     interes_0 = accum_cost * r * dt
     
@@ -75,7 +77,7 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
         # Calcular acciones a comprar/vender
         cant_acciones = (Delta - Delta_prev) * amt_options
         # Flujo de caja asociado (en millones)
-        costo_acciones = (cant_acciones * S) / 1000
+        costo_acciones = (cant_acciones * S)
         # Interés del costo acumulado anterior
         interes = accum_cost * r * dt
         # Actualizar costo acumulado
@@ -86,7 +88,46 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
         # Actualizar para el siguiente paso
         Delta_prev = Delta
 
+    # --- AJUSTE DE LIQUIDACIÓN FINAL (EN T) ---
+
+    S_T = S  # S es el precio final de la acción
+    shares_held_final = Delta * amt_options # Delta es Delta[n_steps]
+    
+    # Costo final total para la performance (en miles)
+    costo_final_performance = accum_cost
+    
+    # Flujo de caja de liquidación (en miles)
+    flujo_liquidacion = 0
+    
+    if S_T > K:
+        # 1. Caso ITM (Option Exercised): Institución recibe el strike K a cambio de las acciones.
+        # Es un ingreso, por lo que reduce el costo acumulado (costo_final_performance).
+        flujo_liquidacion = K * amt_options
+    else:
+        # 2. Caso OTM (Option Expires): Institución vende las acciones remanentes del hedge.
+        # También es un ingreso.
+        flujo_liquidacion = shares_held_final * S_T
+
+    # Actualizar el costo acumulado con el flujo final de liquidación
+    costo_final_performance -= flujo_liquidacion
+    
+    # Crear la fila final de resumen para el DataFrame (Opcional, pero ayuda a la trazabilidad)
+    df.loc[n_steps + 1] = ['Final', S_T, 
+                            (1.0 if S_T > K else 0.0), # Delta teórico en T
+                            -shares_held_final, # Acciones vendidas/entregadas
+                            -flujo_liquidacion, # Ingreso
+                            costo_final_performance, 0] # Costo final
+
+
     return df
+
+def montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim):
+    # C = hedging costs array
+    Cs = np.empty(n_sim, dtype=float)
+    for i in range(n_sim):
+        df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
+        Cs[i] = df['Costo acumulado'].loc[len(df)-1] 
+    return Cs
 
 def main():
     K = 50
@@ -100,10 +141,12 @@ def main():
     n_steps = 20
 
 
-    df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
+    # df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
+    # ## Table 19.2 - 19.3 Hull
+    # print(df.head(21))
 
-    ## Table 19.2 - 19.3 Hull
-    print(df.head(20))
-
+    Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
+    performance = get_hedge_preformance(Cs, BSM_price * amt_options)
+    print(f'\n\nPerformance: {performance}\n\n')
 if __name__ == '__main__':
     main()
