@@ -5,7 +5,8 @@ from price_simulation import sim_stock_price
 
 
 def get_d1(S_0, K, r, tau, deviation):
-    return (np.log(S_0 / K) + (r +(deviation ** 2 / 2)) * tau) / (deviation * np.sqrt(tau))
+    tau_eff = max(tau, 1e-12)
+    return (np.log(S_0 / K) + (r +(deviation ** 2 / 2)) * tau_eff) / (deviation * np.sqrt(tau_eff))
 
 ##Estima la integral de funciong entre -inf y a con 5000 simulaciones
 def monte_carlo_inf_a(g, a, n_sim):
