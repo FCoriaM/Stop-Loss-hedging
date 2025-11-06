@@ -11,16 +11,19 @@ def get_plot(df: pd.DataFrame):
     plt.savefig('stock_price_simulation.png')
     plt.show()    
 
+def sim_stock_price(mu, sigma, S, dt):
+    eps = np.random.normal(0,1)
+    dS = 0.05 * S * dt + sigma * S * np.sqrt(dt) * eps
+    S_new = max(S + dS, 1e-12)
+    return S_new
+
 def simulate_single_path(S0, mu, sigma, dt, n_steps):
     
-    rng = np.random.default_rng()
     t = np.arange(n_steps + 1) * dt
     S = np.empty(n_steps + 1, dtype=float)
     S[0] = S0
     for k in range(1, n_steps + 1):
-        eps = rng.normal(0.0, 1.0)
-        dS = mu * S[k-1] * dt + sigma * S[k-1] * np.sqrt(dt) * eps
-        S[k] = max(S[k-1] + dS, 1e-12)
+        S[k] = sim_stock_price(mu, sigma, S[k-1], dt)
     return t, S
 
 def main():
