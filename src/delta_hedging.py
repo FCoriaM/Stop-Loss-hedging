@@ -4,8 +4,8 @@ import numpy as np
 from price_simulation import sim_stock_price
 
 
-def get_d1(S_0, K, r, tao, deviation):
-    return (np.log(S_0 / K) + (r +(deviation ** 2 / 2)) * T) / (deviation * np.sqrt(T))
+def get_d1(S_0, K, r, tau, deviation):
+    return (np.log(S_0 / K) + (r +(deviation ** 2 / 2)) * tau) / (deviation * np.sqrt(tau))
 
 ##Estima la integral de funciong entre -inf y a con 5000 simulaciones
 def monte_carlo_inf_a(g, a, n_sim):
@@ -22,15 +22,15 @@ def norm_cdf(x):
     estim_monte_carlo = monte_carlo_inf_a(funciong, x, n_sim=1000)
     return 1 / np.sqrt(2 * np.pi) * estim_monte_carlo
 
-def delta_call(S0, K, r, tao, sigma):
-    x = get_d1(S0, K, r, tao, sigma)
+def delta_call(S0, K, r, tau, sigma):
+    x = get_d1(S0, K, r, tau, sigma)
     return norm_cdf(x)
 
-def delta_put(S0, K, r, tao, sigma):
-    x = get_d1(S0, K, r, tao, sigma)
+def delta_put(S0, K, r, tau, sigma):
+    x = get_d1(S0, K, r, tau, sigma)
     return norm_cdf(x) - 1
 
-def delta_hedging_single_sim(S0, K, Delta0, r, sigma, T, amt_options, n_steps):
+def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
     """
     Simula una estrategia de cobertura Delta-hedging paso a paso.
     Devuelve un DataFrame con el detalle de cada paso temporal.
@@ -53,7 +53,7 @@ def delta_hedging_single_sim(S0, K, Delta0, r, sigma, T, amt_options, n_steps):
 
     # Condiciones iniciales
     S = S0
-    Delta_prev = Delta0
+    Delta_prev = delta_call(S, K, r, T, sigma)
     cum_cost = Delta_prev * S / 1000  # en millones
     interest_cost = 0
 
@@ -78,7 +78,7 @@ def delta_hedging_single_sim(S0, K, Delta0, r, sigma, T, amt_options, n_steps):
         # Actualizar costo acumulado
         cum_cost = cum_cost * (1 + r * dt) + costo_acciones
         # Agregar fila al DataFrame
-        df.loc[k] = [k * dt, S, Delta, acciones,
+        df.loc[k] = [k, S, Delta, acciones,
                      costo_acciones, cum_cost, interes]
         # Actualizar para el siguiente paso
         Delta_prev = Delta
@@ -88,17 +88,17 @@ def delta_hedging_single_sim(S0, K, Delta0, r, sigma, T, amt_options, n_steps):
 def main():
     K = 50
     S_0 = 49
-    deviation = 0.20
+    sigma = 0.20
     T = 0.3846 # años, equiv a 20 semanas
     n_sim = 1000
     r = 0.05
     amt_options = 100_000 # cantidad de opciones que se firmaron en el contrato
     BSM_price = 2.40
+    n_steps = 20
 
 
-    Delta = delta_call_long(S_0, K, r, T, deviation)
-
-    print(f"N(d1) (Delta call): {Delta}")
+    df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
+    print(df.head(20))
 
 if __name__ == '__main__':
     main()
