@@ -1,7 +1,7 @@
 import pandas as pd
 from random import random
 import numpy as np
-from price_simulation import sim_stock_price
+from src.price_simulation import sim_stock_price
 
 
 def get_d1(S_0, K, r, tau, deviation):
@@ -98,6 +98,8 @@ def main():
 
 
     df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
+
+    ## Table 19.2 - 19.3 Hull
     print(df.head(20))
 
 if __name__ == '__main__':
