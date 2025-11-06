@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from price_simulation import sim_stock_price
 
 
 def get_hedge_preformance(Cs, BSM_price):
@@ -39,6 +38,20 @@ def montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_steps, n_sim):
         Cs[i] = stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps)
     return Cs
         
+def run_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim, BSM_price, hedges_performances):
+    Cs = montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim)    
+    performance = get_hedge_preformance(Cs, BSM_price)
+    hedges_performances.append(performance)
+
+def print_stop_loss_table(dts_weeks, hedges_performances):
+    print("\nTabla 19.1 - Performance de la cobertura Stop-Loss")
+    print("--------------------------------------------------")
+    print(f"{'Δt (semanas)':>14} | {'Performance':>12}")
+    print("---------------|--------------")
+    for dt, perf in zip(dts_weeks, hedges_performances):
+        print(f"{dt:>14.2f} | {perf:>12.5f}")
+    print("---------------|--------------\n\n")
+
 
 def main():
     K = 50
@@ -55,20 +68,11 @@ def main():
 
 
     for delta_t, n_step in zip(deltas_t, n_steps):
-        Cs = montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim)    
-        performance = get_hedge_preformance(Cs, BSM_price)
-        hedges_performances.append(performance)
+        run_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim, BSM_price, hedges_performances)
         
     dts_weeks = [round(dt * 52, 2) for dt in deltas_t]
 
-
-    print("\nTabla 19.1 - Performance de la cobertura Stop-Loss")
-    print("--------------------------------------------------")
-    print(f"{'Δt (semanas)':>14} | {'Performance':>12}")
-    print("---------------|--------------")
-    for dt, perf in zip(dts_weeks, hedges_performances):
-        print(f"{dt:>14.2f} | {perf:>12.5f}")
-    print("---------------|--------------\n\n")
+    print_stop_loss_table(dts_weeks, hedges_performances)
 
 if __name__ == '__main__':
     main()
