@@ -8,8 +8,8 @@ def get_hedge_preformance(Cs, BSM_price):
     return std_dev / BSM_price
 
 def sim_stock_price(r, sigma, S, dt):
-    eps = np.random.normal(0,1)
-    dS = r * S * dt + sigma * S * np.sqrt(dt) * eps
+    Wt = np.random.normal(0,1)
+    dS = r * S * dt + sigma * S * np.sqrt(dt) * Wt
     S_new = max(S + dS, 1e-12)
     return S_new
 
@@ -30,14 +30,14 @@ def stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps):
     if S[n_steps] > K:
         hedging_cost -= K
 
-    return S, hedging_cost
+    return hedging_cost
 
 def montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_steps, n_sim):
     # C = hedging costs array
-    C = np.empty(n_sim, dtype=float)
+    Cs = np.empty(n_sim, dtype=float)
     for i in range(n_sim):
-        _, C[i] = stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps)
-    return C
+        Cs[i] = stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps)
+    return Cs
         
 
 def main():
@@ -68,6 +68,7 @@ def main():
     print("---------------|--------------")
     for dt, perf in zip(dts_weeks, hedges_performances):
         print(f"{dt:>14.2f} | {perf:>12.5f}")
+    print("---------------|--------------\n\n")
 
 if __name__ == '__main__':
     main()
