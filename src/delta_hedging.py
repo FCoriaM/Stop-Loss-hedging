@@ -32,33 +32,57 @@ def delta_put(S0, K, r, tao, sigma):
 
 def delta_hedging_single_sim(S0, K, Delta0, r, sigma, T, amt_options, n_steps):
     """
-    t | S(t) | Delta | Acciones compradas | Costo acciones compradas | Costo acumulado | Costo de Interes  
+    Simula una estrategia de cobertura Delta-hedging paso a paso.
+    Devuelve un DataFrame con el detalle de cada paso temporal.
+
+    Columnas:
+      t : tiempo actual
+      S(t) : precio del subyacente
+      Delta : Delta de la opción
+      Acciones compradas : variación de posición en el subyacente
+      Costo acciones compradas : flujo de caja por esa variación
+      Costo acumulado : costo total acumulado hasta ese momento
+      Costo de Interes : interés pagado sobre el costo acumulado previo
     """
-    columns = ['t', 'S(t)', 'Delta', 'Acciones compradas', 'Costo acciones compradas', 'Costo acumulado', 'Costo de Interes']
-    df = pd.DataFrame(columns=columns)
+
     dt = T / n_steps
-    S = np.empty(n_steps + 1, dtype=float)
-    Deltas = np.empty(n_steps + 1, dtype=float)
-    shares_purchased = np.empty(n_steps + 1, dtype=float)
-    cost_s_p = np.empty(n_steps + 1, dtype=float)
-    cum_cost = np.empty(n_steps + 1, dtype=float)
-    interest_cost = np.empty(n_steps + 1, dtype=float)
+    df = pd.DataFrame(columns=[
+        't', 'S(t)', 'Delta', 'Acciones compradas',
+        'Costo acciones compradas', 'Costo acumulado', 'Costo de Interes'
+    ])
 
-    S[0] = S0
-    Deltas[0] = Delta0
-    shares_purchased[0] = Deltas[0] * amt_options 
-    cost_s_p[0] = shares_purchased[0] * S[0] / 1000 # in millions
-    cum_cost[0] = cost_s_p[0]
-    interest_cost[0] = 0
+    # Condiciones iniciales
+    S = S0
+    Delta_prev = Delta0
+    cum_cost = Delta_prev * S / 1000  # en millones
+    interest_cost = 0
 
+    # Agregar fila inicial
+    df.loc[0] = [0, S, Delta_prev, Delta_prev * amt_options,
+                 cum_cost, cum_cost, interest_cost]
+
+    # Simulación paso a paso
     for k in range(1, n_steps + 1):
-        S[k] = sim_stock_price(r, sigma, S[k-1], dt)
-        tao = T - k*dt
-        Deltas[k] = delta_call(S0, K, r, tao, sigma)
-        shares_purchased[k] = (Deltas[k] - Deltas[k-1]) * amt_options
-        cost_s_p[k] = shares_purchased[k] * S[k] / 1000 # in millions
-        cum_cost[k] = cost_s_p[k-1] * (1 + r * dt) + cost_s_p[k]
-        interest_cost[k] = cum_cost[k-1] * r * dt
+        # Simular nuevo precio
+        S = sim_stock_price(r, sigma, S, dt)
+        # Tiempo restante hasta el vencimiento
+        tau = T - k * dt
+        # Calcular nueva Delta
+        Delta = delta_call(S, K, r, tau, sigma)
+        # Calcular acciones a comprar/vender
+        acciones = (Delta - Delta_prev) * amt_options
+        # Flujo de caja asociado (en millones)
+        costo_acciones = acciones * S / 1000
+        # Interés del costo acumulado anterior
+        interes = cum_cost * r * dt
+        # Actualizar costo acumulado
+        cum_cost = cum_cost * (1 + r * dt) + costo_acciones
+        # Agregar fila al DataFrame
+        df.loc[k] = [k * dt, S, Delta, acciones,
+                     costo_acciones, cum_cost, interes]
+        # Actualizar para el siguiente paso
+        Delta_prev = Delta
+
     return df
 
 def main():
