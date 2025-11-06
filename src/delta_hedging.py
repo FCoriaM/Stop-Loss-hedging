@@ -5,9 +5,10 @@ from src.price_simulation import sim_stock_price
 
 
 def get_d1(S_0, K, r, tau, deviation):
-    return (np.log(S_0 / K) + (r +(deviation ** 2 / 2)) * tau) / (deviation * np.sqrt(tau))
+    tau_eff = max(tau, 1e-12)
+    return (np.log(S_0 / K) + (r +(deviation ** 2 / 2)) * tau_eff) / (deviation * np.sqrt(tau_eff))
 
-##Estima la integral de funciong entre -inf y a con 5000 simulaciones
+##Estima la integral de funciong entre -inf y a con n_sim simulaciones
 def monte_carlo_inf_a(g, a, n_sim):
     suma = 0
     for _ in range(n_sim):
@@ -47,19 +48,21 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
 
     dt = T / n_steps
     df = pd.DataFrame(columns=[
-        't', 'S(t)', 'Delta', 'Acciones compradas',
+        'Week', 'Precio de la acción', 'Delta', 'Acciones compradas',
         'Costo acciones compradas', 'Costo acumulado', 'Costo de Interes'
     ])
 
     # Condiciones iniciales
     S = S0
     Delta_prev = delta_call(S, K, r, T, sigma)
-    cum_cost = Delta_prev * S / 1000  # en millones
-    interest_cost = 0
-
+    acciones_0 = Delta_prev * amt_options
+    costo_0 = acciones_0 * S / 1000  
+    accum_cost = costo_0
+    interes_0 = 0
+    
     # Agregar fila inicial
-    df.loc[0] = [0, S, Delta_prev, Delta_prev * amt_options,
-                 cum_cost, cum_cost, interest_cost]
+    df.loc[0] = [0, S, Delta_prev, acciones_0,
+                 costo_0, accum_cost, interes_0]
 
     # Simulación paso a paso
     for k in range(1, n_steps + 1):
@@ -70,16 +73,16 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
         # Calcular nueva Delta
         Delta = delta_call(S, K, r, tau, sigma)
         # Calcular acciones a comprar/vender
-        acciones = (Delta - Delta_prev) * amt_options
+        cant_acciones = (Delta - Delta_prev) * amt_options
         # Flujo de caja asociado (en millones)
-        costo_acciones = acciones * S / 1000
+        costo_acciones = (cant_acciones * S) / 1000
         # Interés del costo acumulado anterior
-        interes = cum_cost * r * dt
+        interes = accum_cost * r * dt
         # Actualizar costo acumulado
-        cum_cost = cum_cost * (1 + r * dt) + costo_acciones
+        accum_cost = accum_cost * (1 + r * dt) + costo_acciones
         # Agregar fila al DataFrame
-        df.loc[k] = [k, S, Delta, acciones,
-                     costo_acciones, cum_cost, interes]
+        df.loc[k] = [k, S, Delta, cant_acciones,
+                     costo_acciones, accum_cost, interes]
         # Actualizar para el siguiente paso
         Delta_prev = Delta
 
