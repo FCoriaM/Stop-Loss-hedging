@@ -58,7 +58,7 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
     S = S0
     Delta_prev = delta_call(S, K, r, T, sigma)
     acciones_0 = Delta_prev * amt_options
-    costo_0 = acciones_0 * S
+    costo_0 = acciones_0 * S / 1000
     accum_cost = costo_0
     interes_0 = accum_cost * r * dt
     
@@ -77,7 +77,7 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
         # Calcular acciones a comprar/vender
         cant_acciones = (Delta - Delta_prev) * amt_options
         # Flujo de caja asociado (en millones)
-        costo_acciones = (cant_acciones * S)
+        costo_acciones = cant_acciones * S / 1000
         # Interés del costo acumulado anterior
         interes = accum_cost * r * dt
         # Actualizar costo acumulado
@@ -88,13 +88,17 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
         # Actualizar para el siguiente paso
         Delta_prev = Delta
 
+    # Agregar fila final
+    df.loc[n_steps + 1] = [n_steps + 1, S, 0 if S < K else 1, cant_acciones,
+                 costo_acciones, accum_cost, interes]
+
     # --- AJUSTE DE LIQUIDACIÓN FINAL (EN T) ---
 
     S_T = S  # S es el precio final de la acción
     shares_held_final = Delta * amt_options # Delta es Delta[n_steps]
     
     # Costo final total para la performance (en miles)
-    costo_final_performance = accum_cost
+    costo_final_performance = accum_cost * 1000
     
     # Flujo de caja de liquidación (en miles)
     flujo_liquidacion = 0
@@ -126,7 +130,7 @@ def montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim):
     Cs = np.empty(n_sim, dtype=float)
     for i in range(n_sim):
         df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
-        Cs[i] = df['Costo acumulado'].loc[len(df)-1] 
+        Cs[i] = df['Costo acumulado ($000)'].loc[len(df)-1] 
     return Cs
 
 def main():
@@ -141,12 +145,13 @@ def main():
     n_steps = 20
 
 
-    # df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
-    # ## Table 19.2 - 19.3 Hull
-    # print(df.head(21))
+    df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
+    # Table 19.2 - 19.3 Hull
+    print(df.head(21))
 
-    Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
-    performance = get_hedge_preformance(Cs, BSM_price * amt_options)
-    print(f'\n\nPerformance: {performance}\n\n')
+    ##Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
+    ##performance = get_hedge_preformance(Cs, BSM_price * amt_options)
+    ##print(f'\n\nPerformance: {performance}\n\n')
 if __name__ == '__main__':
     main()
+
