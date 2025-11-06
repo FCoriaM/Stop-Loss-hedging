@@ -49,7 +49,7 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
     dt = T / n_steps
     df = pd.DataFrame(columns=[
         'Week', 'Precio de la acción', 'Delta', 'Acciones compradas',
-        'Costo acciones compradas', 'Costo acumulado', 'Costo de Interes'
+        'Costo acciones compradas ($000)', 'Costo acumulado ($000)', 'Costo de Interes ($000)'
     ])
 
     # Condiciones iniciales
@@ -58,7 +58,7 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
     acciones_0 = Delta_prev * amt_options
     costo_0 = acciones_0 * S / 1000  
     accum_cost = costo_0
-    interes_0 = 0
+    interes_0 = accum_cost * r * dt
     
     # Agregar fila inicial
     df.loc[0] = [0, S, Delta_prev, acciones_0,
