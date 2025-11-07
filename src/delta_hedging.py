@@ -116,10 +116,10 @@ def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
     costo_final_performance -= flujo_liquidacion
     
     # Crear la fila final de resumen para el DataFrame (Opcional, pero ayuda a la trazabilidad)
-    df.loc[n_steps + 1] = ['Final', S_T, 
+    df.loc[n_steps + 1] = [n_steps + 1, S_T, 
                             (1.0 if S_T > K else 0.0), # Delta teórico en T
-                            -shares_held_final, # Acciones vendidas/entregadas
-                            -flujo_liquidacion, # Ingreso
+                            shares_held_final, # Acciones vendidas/entregadas
+                            flujo_liquidacion, # Ingreso
                             costo_final_performance, 0] # Costo final
 
 
@@ -144,14 +144,13 @@ def print_delta_hedging_table(df):
     print("-" * 100)
 
     for _, row in df.iterrows():
-        if row['Week'] != 'Final':
-            print(f"{row['Week']:>9} | "
-                f"{row['Precio de la acción']:>8.3f} | "
-                f"{row['Delta']:>8.3f} | "
-                f"{row['Acciones compradas']:>10.1f} | "
-                f"{row['Costo acciones compradas ($000)']:>24.5f} | "
-                f"{row['Costo acumulado ($000)']:>12.2f} | "
-                f"{row['Costo de Interes ($000)']:>10.5f}")
+        print(f"{row['Week']:>9} | "
+            f"{row['Precio de la acción']:>8.3f} | "
+            f"{row['Delta']:>8.3f} | "
+            f"{row['Acciones compradas']:>10.1f} | "
+            f"{row['Costo acciones compradas ($000)']:>24.5f} | "
+            f"{row['Costo acumulado ($000)']:>12.2f} | "
+            f"{row['Costo de Interes ($000)']:>10.5f}")
     print('\n\n\n')
 
 def main():
@@ -175,7 +174,7 @@ def main():
 
     Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
     performance = get_hedge_preformance(Cs, BSM_price * amt_options)
-    print(f'\n\nPerformance: {performance}\n\n')
+    print(f'Performance: {performance}\n')
 if __name__ == '__main__':
     main()
 
