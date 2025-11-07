@@ -1,10 +1,20 @@
 import pandas as pd
 from random import random
 import numpy as np
-from price_simulation import sim_stock_price
-from stop_loss import get_hedge_preformance
+# from price_simulation import sim_stock_price
+# from stop_loss import get_hedge_preformance
 from scipy.stats import norm
 
+
+def sim_stock_price(r, sigma, S, dt):
+    eps = np.random.normal(0,1)
+    dS = r * S * dt + sigma * S * np.sqrt(dt) * eps
+    S_new = max(S + dS, 1e-12)
+    return S_new
+
+def get_hedge_preformance(Cs, BSM_price):
+    std_dev = np.std(Cs, ddof=1)
+    return std_dev / BSM_price
 
 def get_d1(S_0, K, r, tau, deviation):
     tau_eff = max(tau, 1e-12)
@@ -133,13 +143,13 @@ def montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim):
         Cs[i] = df['Costo acumulado ($000)'].loc[len(df)-1] 
     return Cs
 
-def print_delta_hedging_table(df):
+def print_dh_single_sim_table(df):
     """
     Imprime una tabla formateada del DataFrame de cobertura Delta-Hedging.
     Similar a la Tabla 19.2 del libro de Hull.
     """
 
-    print("\n\n\nTabla – Evolución de la estrategia Delta-Hedging\n")
+    print("\n\n\nTabla 19.2 / 19.3 - Evolución de la estrategia Delta-Hedging\n")
     print(f"{'t':>9} | {'S(t)':>8} | {'Delta':>8} | {'Acciones':>10} | {'Costo acciones compradas':>12} | {'Costo acum.':>12} | {'Interés':>10}")
     print("-" * 100)
 
@@ -153,6 +163,21 @@ def print_delta_hedging_table(df):
             f"{row['Costo de Interes ($000)']:>10.5f}")
     print('\n\n\n')
 
+def print_dh_performances_table(dts_weeks, hedges_performances):
+    print("\nTabla 19.4 - Performance de la cobertura Delta-hedging")
+    print("--------------------------------------------------")
+    print(f"{'Δt (semanas)':>14} | {'Performance':>12}")
+    print("---------------|--------------")
+    for dt, perf in zip(dts_weeks, hedges_performances):
+        print(f"{dt:>14.2f} | {perf:>12.5f}")
+    print("---------------|--------------\n\n")
+
+
+def run_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim, BSM_price, dh_hedges_performances):
+    Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
+    performance = get_hedge_preformance(Cs, BSM_price * amt_options)
+    dh_hedges_performances.append(performance)
+
 def main():
     K = 50
     S_0 = 49
@@ -165,16 +190,15 @@ def main():
     n_steps = 20
 
 
-    df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
-
-
     ## Table 19.2 - 19.3 Hull    
-    print_delta_hedging_table(df)
-    # print(df.head(21))
+    df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
+    print_dh_single_sim_table(df)
 
     Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
     performance = get_hedge_preformance(Cs, BSM_price * amt_options)
     print(f'Performance: {performance}\n')
+
+
 if __name__ == '__main__':
     main()
 

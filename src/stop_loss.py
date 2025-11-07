@@ -38,10 +38,10 @@ def montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_steps, n_sim):
         Cs[i] = stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps)
     return Cs
         
-def run_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim, BSM_price, hedges_performances):
+def run_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim, BSM_price, sl_hedges_performances):
     Cs = montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim)    
     performance = get_hedge_preformance(Cs, BSM_price)
-    hedges_performances.append(performance)
+    sl_hedges_performances.append(performance)
 
 def print_stop_loss_table(dts_weeks, hedges_performances):
     print("\nTabla 19.1 - Performance de la cobertura Stop-Loss")
