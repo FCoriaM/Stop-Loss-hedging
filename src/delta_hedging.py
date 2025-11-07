@@ -180,9 +180,9 @@ def main():
     df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
     print_dh_single_sim_table(df)
 
-    # Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
-    # performance = get_hedge_preformance(Cs, BSM_price * amt_options)
-    # print(f'Performance: {performance}\n')
+    Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
+    performance = get_hedge_preformance(Cs, BSM_price * amt_options)
+    print(f'Performance: {performance}\n')
 
 
 if __name__ == '__main__':
