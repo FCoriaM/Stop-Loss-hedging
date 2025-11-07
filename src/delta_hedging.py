@@ -20,20 +20,6 @@ def get_d1(S_0, K, r, tau, deviation):
     tau_eff = max(tau, 1e-12)
     return (np.log(S_0 / K) + (r +(deviation ** 2 / 2)) * tau_eff) / (deviation * np.sqrt(tau_eff))
 
-##Estima la integral de funciong entre -inf y a con n_sim simulaciones
-def monte_carlo_inf_a(g, a, n_sim):
-    suma = 0
-    for _ in range(n_sim):
-        u = random()
-        suma += g(a - (1/u - 1)) / (u**2)
-    return suma / n_sim
-
-def funciong(x):
-    return np.exp((-x**2)/2)
-
-def norm_cdf(x):
-    estim_monte_carlo = monte_carlo_inf_a(funciong, x, n_sim=1000)
-    return 1 / np.sqrt(2 * np.pi) * estim_monte_carlo
 
 def delta_call(S0, K, r, tau, sigma):
     x = get_d1(S0, K, r, tau, sigma)
@@ -41,7 +27,7 @@ def delta_call(S0, K, r, tau, sigma):
 
 def delta_put(S0, K, r, tau, sigma):
     x = get_d1(S0, K, r, tau, sigma)
-    return norm_cdf(x) - 1
+    return norm.cdf(x) - 1
 
 def delta_hedging_single_sim(S0, K, r, sigma, T, amt_options, n_steps):
     """
@@ -194,9 +180,9 @@ def main():
     df = delta_hedging_single_sim(S_0, K, r, sigma, T, amt_options, n_steps)
     print_dh_single_sim_table(df)
 
-    Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
-    performance = get_hedge_preformance(Cs, BSM_price * amt_options)
-    print(f'Performance: {performance}\n')
+    # Cs = montecarlo_delta_hedging(S_0, K, r, sigma, T, n_steps, amt_options, n_sim)
+    # performance = get_hedge_preformance(Cs, BSM_price * amt_options)
+    # print(f'Performance: {performance}\n')
 
 
 if __name__ == '__main__':
