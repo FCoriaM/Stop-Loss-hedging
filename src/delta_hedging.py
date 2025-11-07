@@ -1,8 +1,5 @@
 import pandas as pd
-from random import random
 import numpy as np
-# from price_simulation import sim_stock_price
-# from stop_loss import get_hedge_preformance
 from scipy.stats import norm
 
 

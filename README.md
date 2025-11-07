@@ -2,26 +2,21 @@
 
 Simulación de precios de activos financieros y estrategias de cobertura (Stop-Loss y Delta Hedging) usando Python.
 
-## Preparación del entorno
-Se recomienda crear un entorno virtual antes de instalar las dependencias:
+## Preparación del entorno y ejecución
+Se recomienda crear un entorno virtual antes de instalar las dependencias, para eso, debemos asegurarnos de estar ubicados en el directorio raíz del proyecto, luego ejecutar:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate 
 pip install -r requirements.txt
 ```
-
-## Módulos
-### price_simulation.py
-En este módulo se realiza la simulación del precio del activo subyacente mediante el método MonteCarlo.
-En cada ciclo del método, se actualiza el valor $\Delta S$, cuyo valor se obtiene de la fórmula $$\Delta S = \mu S \Delta t + \sigma S \epsilon \sqrt{\Delta t}$$ la cual denota el comportamiento del precio del activo según el **Movimiento Geométrico Browniano** en intervalos de tiempo pequenios. Para esto se debe simular el valor de $\epsilon$ con una distribución $N(0,1)$.
-
-Luego de 1000 simulaciones de precio cada $\Delta t$ intervalos de tiempo, obtenemos la tabla y el gráfico correspondiente con las siguientes variaciones
-
-==Agregar tabla==
-
-
+**Ejecución:**
+Ya con el entorno virtual activado, para ejecutar la simulación de las estrategias, correr el siguiente comando:
+```bash
+python3 main.py
+```
 
 ## Referencias
+**Informe completo con análisis de resultados:** [Docs](https://docs.google.com/document/d/1tatG4cuNCqMc8hVf2LeztVTCyyfia8OWl9Har_7z_DE/edit?tab=t.0)
 
-[John Hull](https://drive.google.com/file/d/1_92BVhgf5vjEW2htlPv8nARihjLWsQTk/view)
+**Libro de estudio:** [John Hull](https://drive.google.com/file/d/1_92BVhgf5vjEW2htlPv8nARihjLWsQTk/view)
