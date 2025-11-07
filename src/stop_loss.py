@@ -12,7 +12,7 @@ def sim_stock_price(r, sigma, S, dt):
     S_new = max(S + dS, 1e-12)
     return S_new
 
-def stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps):
+def stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps, tasa_comision):
     S = np.empty(n_steps + 1, dtype=float)
     S[0] = S_0
     t = 0
@@ -21,25 +21,25 @@ def stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps):
         S[t] = sim_stock_price(r, deviation, S[t-1], delta_t)
         if K < S[t] and S[t-1] < K:
             # buy stock
-            hedging_cost += S[t]
+            hedging_cost += S[t] * (1 + tasa_comision)
         elif S[t] < K and K < S[t-1]:
             # sell stock
-            hedging_cost -= S[t]
+            hedging_cost -= S[t] * (1 - tasa_comision)
     
     if S[n_steps] > K:
-        hedging_cost -= K
+        hedging_cost -= K * (1 - tasa_comision)
 
     return hedging_cost
 
-def montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_steps, n_sim):
+def montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_steps, n_sim, tasa_comision):
     # C = hedging costs array
     Cs = np.empty(n_sim, dtype=float)
     for i in range(n_sim):
-        Cs[i] = stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps)
+        Cs[i] = stop_loss_single_sim(K, S_0, r, deviation, delta_t, n_steps, tasa_comision)
     return Cs
         
-def run_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim, BSM_price, sl_hedges_performances):
-    Cs = montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim)    
+def run_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim, BSM_price, sl_hedges_performances, tasa_comision):
+    Cs = montecarlo_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim, tasa_comision)    
     performance = get_hedge_preformance(Cs, BSM_price)
     sl_hedges_performances.append(performance)
 
@@ -68,7 +68,7 @@ def main():
 
 
     for delta_t, n_step in zip(deltas_t, n_steps):
-        run_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim, BSM_price, hedges_performances)
+        run_stop_loss(K, S_0, r, deviation, delta_t, n_step, n_sim, BSM_price, hedges_performances, tasa_comision=0.0015)
         
     dts_weeks = [round(dt * 52, 2) for dt in deltas_t]
 
